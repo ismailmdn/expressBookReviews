@@ -1,59 +1,52 @@
+
 const express = require('express');
 const public_users = express.Router();
-const bookdb = require('./bookdb'); 
+const bookdb = require('./booksdb'); 
 
-
-public_users.get('/', async function (req, res) {
-    try {
-        const allBooks = await bookdb.getAllBooks();
-        res.send(JSON.stringify(allBooks, null, 2));
-    } catch (error) {
-        res.status(500).json({ message: "Error fetching books data" });
-    }
-});
-
-
-public_users.get('/isbn/:isbn', async function (req, res) {
-    const isbn = req.params.isbn; 
-
-    try {
-        const book = await bookdb.getBookByISBN(isbn);
-        res.send(JSON.stringify(book, null, 2)); 
-    } catch (error) {
-        res.status(404).json({ message: "Book not found" });
-    }
-});
-
-
-public_users.get('/author/:author', async function (req, res) {
-    const author = req.params.author; 
-
-    try {
-        const booksByAuthor = await bookdb.getBooksByAuthor(author);
-        if (booksByAuthor.length > 0) {
-            res.send(JSON.stringify(booksByAuthor, null, 2));
+public_users.get('/', (req, res) => {
+    bookdb.getAllBooks((error, books) => {
+        if (error) {
+            res.status(500).json({ message: "Error fetching books data" });
         } else {
-            res.status(404).json({ message: "No books found by this author" });
+            res.json(books);
         }
-    } catch (error) {
-        res.status(500).json({ message: "Error fetching books data" });
-    }
+    });
 });
 
+public_users.get('/isbn/:isbn', (req, res) => {
+    const isbn = req.params.isbn;
 
-public_users.get('/title/:title', async function (req, res) {
-    const title = req.params.title; 
+    bookdb.getBookByISBN(isbn)
+        .then(book => res.json(book))
+        .catch(error => res.status(404).json({ message: error }));
+});
 
-    try {
-        const booksByTitle = await bookdb.getBooksByTitle(title);
-        if (booksByTitle.length > 0) {
-            res.send(JSON.stringify(booksByTitle, null, 2));
-        } else {
-            res.status(404).json({ message: "No books found with this title" });
-        }
-    } catch (error) {
-        res.status(500).json({ message: "Error fetching books data" });
-    }
+public_users.get('/author/:author', (req, res) => {
+    const author = req.params.author;
+
+    bookdb.getBooksByAuthor(author)
+        .then(booksByAuthor => {
+            if (booksByAuthor.length > 0) {
+                res.json(booksByAuthor);
+            } else {
+                res.status(404).json({ message: "No books found by this author" });
+            }
+        })
+        .catch(error => res.status(500).json({ message: "Error fetching books data" }));
+});
+
+public_users.get('/title/:title', (req, res) => {
+    const title = req.params.title;
+
+    bookdb.getBooksByTitle(title)
+        .then(booksByTitle => {
+            if (booksByTitle.length > 0) {
+                res.json(booksByTitle);
+            } else {
+                res.status(404).json({ message: "No books found with this title" });
+            }
+        })
+        .catch(error => res.status(500).json({ message: "Error fetching books data" }));
 });
 
 module.exports.general = public_users;

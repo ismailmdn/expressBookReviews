@@ -1,24 +1,21 @@
-// Sample book data
+// booksdb.js
+
 const books = {
     "1": { title: "Book One", author: "Author One", reviews: ["Great book!", "Loved it!"] },
     "2": { title: "Book Two", author: "Author Two", reviews: ["Not bad", "Pretty good"] },
     // Add more books here as needed
 };
 
-// Function to get all books
-function getAllBooks() {
-    return new Promise((resolve, reject) => {
-        // Simulate a delay to mimic database query
-        setTimeout(() => {
-            resolve(books);
-        }, 1000);
-    });
+// Task 10: Get all books using an async callback function
+function getAllBooks(callback) {
+    setTimeout(() => {
+        callback(null, books); 
+    }, 1000);
 }
 
-// Function to get a book by ISBN
+// Task 11: Search by ISBN using Promises
 function getBookByISBN(isbn) {
     return new Promise((resolve, reject) => {
-        // Simulate a delay to mimic database query
         setTimeout(() => {
             const book = books[isbn];
             if (book) {
@@ -30,10 +27,9 @@ function getBookByISBN(isbn) {
     });
 }
 
-// Function to get books by author
+// Task 12: Search by Author using Promises
 function getBooksByAuthor(author) {
     return new Promise((resolve, reject) => {
-        // Simulate a delay to mimic database query
         setTimeout(() => {
             const booksByAuthor = [];
             for (let key in books) {
@@ -41,15 +37,18 @@ function getBooksByAuthor(author) {
                     booksByAuthor.push(books[key]);
                 }
             }
-            resolve(booksByAuthor);
+            if (booksByAuthor.length > 0) {
+                resolve(booksByAuthor);
+            } else {
+                reject(new Error('No books found by this author'));
+            }
         }, 1000);
     });
 }
 
-// Function to get books by title
+// Task 13: Search by Title using Promises
 function getBooksByTitle(title) {
     return new Promise((resolve, reject) => {
-        // Simulate a delay to mimic database query
         setTimeout(() => {
             const booksByTitle = [];
             for (let key in books) {
@@ -57,7 +56,11 @@ function getBooksByTitle(title) {
                     booksByTitle.push(books[key]);
                 }
             }
-            resolve(booksByTitle);
+            if (booksByTitle.length > 0) {
+                resolve(booksByTitle);
+            } else {
+                reject(new Error('No books found with this title'));
+            }
         }, 1000);
     });
 }
@@ -68,4 +71,3 @@ module.exports = {
     getBooksByAuthor,
     getBooksByTitle
 };
-    

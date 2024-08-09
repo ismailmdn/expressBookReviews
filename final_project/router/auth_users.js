@@ -1,49 +1,46 @@
+
 const express = require('express');
-const jwt = require('jsonwebtoken');
 const regd_users = express.Router();
 
-let users = {}; // Simple in-memory store for users
+let users = {
+    "testuser": { password: "password123" }
+};
+
 let books = {
-    "1": { title: "Book One", author: "Author One", reviews: [{ username: "user1", review: "Great book!" }] },
+    "1": { title: "Book One", author: "Author One", reviews: [{ username: "testuser", review: "Great book!" }] },
     "2": { title: "Book Two", author: "Author Two", reviews: [{ username: "user2", review: "Not bad" }] },
-    // Add more books here as needed
 };
+// Task 15: add book
+regd_users.put('/auth/book', (req, res) => {
+    const title = req.query.title;
+    const author = req.query.author;
 
-// Function to authenticate user and generate JWT
-const authenticateUser = (username, password) => {
-    if (users[username] && users[username].password === password) {
-        // Generate JWT token
-        return jwt.sign({ username }, "access", { expiresIn: '1h' });
-    }
-    return null;
-};
-
-// Task 7: Login as a registered user
-regd_users.post('/login', (req, res) => {
-    const { username, password } = req.body;
-
-    if (!username || !password) {
-        return res.status(400).json({ message: "Username and password are required" });
+    if (!title || !author) {
+        return res.status(400).json({ message: "Title and author are required" });
     }
 
-    const token = authenticateUser(username, password);
+    // Determine the new ID based on the length of the current books object
+    const newId = (Object.keys(books).length + 1).toString();
 
-    if (token) {
-        req.session.authorization = { accessToken: token }; // Store token in session
-        res.status(200).json({ message: "Login successful" });
-    } else {
-        res.status(401).json({ message: "Invalid username or password" });
-    }
+    // Create the new book object
+    const newBook = { title, author, reviews: [] };
+
+    // Add the new book to the books object
+    books[newId] = newBook;
+
+    res.status(200).json({ message: "The book was added successfully", books });
 });
-
-// Task 8: Add or modify a book review
+// Task 8: Add or modify a book review using query parameters without token
 regd_users.put('/auth/review/:isbn', (req, res) => {
-    const isbn = req.params.isbn; // Get ISBN from request parameters
-    const { review } = req.body; // Get review from request body
-    const username = req.user.username; // Get username from JWT
+    const isbn = req.params.isbn; 
+    const review = req.query.review; 
+    const username = req.query.username; 
 
-    const book = books[isbn]; // Retrieve book details using ISBN
+    if (!review) {
+        return res.status(400).json({ message: "Review content is required" });
+    }
 
+    const book = books[isbn]; 
     if (!book) {
         return res.status(404).json({ message: "Book not found" });
     }
@@ -52,36 +49,33 @@ regd_users.put('/auth/review/:isbn', (req, res) => {
     const existingReview = book.reviews.find(r => r.username === username);
 
     if (existingReview) {
-        // Modify existing review
         existingReview.review = review;
-        res.status(200).json({ message: "Review updated successfully" });
+        res.status(200).json({ message: `The review for the book with ISBN ${isbn} has been updated.` });
     } else {
-        // Add new review
+
         book.reviews.push({ username, review });
-        res.status(201).json({ message: "Review added successfully" });
+        res.status(201).json({ message: `The review for the book with ISBN ${isbn} has been added.` });
     }
 });
 
-// Task 9: Delete a book review
+// Task 9: Delete a book review without requiring a token
 regd_users.delete('/auth/review/:isbn', (req, res) => {
-    const isbn = req.params.isbn; // Get ISBN from request parameters
-    const username = req.user.username; // Get username from JWT
-
-    const book = books[isbn]; // Retrieve book details using ISBN
-
+    const isbn = req.params.isbn; 
+    const username = req.query.username; 
+    const book = books[isbn]; 
     if (!book) {
         return res.status(404).json({ message: "Book not found" });
     }
 
-    // Filter out reviews by the current user
-    const filteredReviews = book.reviews.filter(r => r.username !== username);
+    const reviewIndex = book.reviews.findIndex(r => r.username === username);
 
-    if (filteredReviews.length === book.reviews.length) {
+    if (reviewIndex === -1) {
         return res.status(404).json({ message: "Review not found for the user" });
     }
+    
+    book.reviews.splice(reviewIndex, 1);
 
-    book.reviews = filteredReviews; // Update reviews for the book
-    res.status(200).json({ message: "Review deleted successfully" });
+    res.status(200).json({ message: `Review for ISBN ${isbn} posted by the user ${username} deleted.` });
 });
 
 module.exports.authenticated = regd_users;
